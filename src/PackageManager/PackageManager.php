@@ -19,6 +19,7 @@ final class PackageManager
 {
     public const YARN = 'yarn';
     public const NPM = 'npm';
+    public const PNPM = 'pnpm';
 
     private const DEPENDENCIES = 'dependencies';
     private const DEPS_INSTALL = 'install';
@@ -46,6 +47,15 @@ final class PackageManager
             self::SCRIPT => 'npm run %s',
             self::DISCOVER => 'npm --version',
             self::CLEAN_CACHE => 'npm cache clear --force',
+        ],
+        self::PNPM => [
+            self::DEPENDENCIES => [
+                self::DEPS_INSTALL => 'pnpm install --frozen-lockfile',
+                self::DEPS_UPDATE => 'pnpm update',
+            ],
+            self::SCRIPT => 'pnpm run %s',
+            self::DISCOVER => 'pnpm --version',
+            self::CLEAN_CACHE => 'pnpm store prune',
         ],
     ];
 
@@ -167,18 +177,17 @@ final class PackageManager
 
         $manager = $config[self::MANAGER] ?? null;
         $name = is_string($manager) ? strtolower(trim($manager)) : null;
-        in_array($name, [self::YARN, self::NPM], true) or $name = null;
+        in_array($name, [self::YARN, self::NPM, self::PNPM], true) or $name = null;
         $this->name = $name;
 
-        $isYarn = $this->isYarn();
-        if (!$isYarn && !$this->isNpm()) {
+        if (!$this->isYarn() && !$this->isPnpm() && !$this->isNpm()) {
             $this->reset();
 
             return;
         }
 
         $clean = $config[self::CLEAN_CACHE] ?? null;
-        $defaults = self::SUPPORTED_DEFAULTS[$isYarn ? self::YARN : self::NPM];
+        $defaults = self::SUPPORTED_DEFAULTS[$this->name()];
         $this->cacheClean = ($clean && is_string($clean)) ? $clean : $defaults[self::CLEAN_CACHE];
     }
 
@@ -205,8 +214,34 @@ final class PackageManager
             return $this->name === self::NPM;
         }
 
+        if ($this->script && stripos($this->script, 'pnpm') !== false) {
+            return false;
+        }
+
         if ($this->script && stripos($this->script, 'npm') !== false) {
             $this->name = self::NPM;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isPnpm(): bool
+    {
+        if (!$this->isValid()) {
+            return false;
+        }
+
+        if ($this->name) {
+            return $this->name === self::PNPM;
+        }
+
+        if ($this->script && stripos($this->script, 'pnpm') !== false) {
+            $this->name = self::PNPM;
 
             return true;
         }
@@ -245,7 +280,11 @@ final class PackageManager
             return 'invalid';
         }
 
-        return $this->isYarn() ? 'yarn' : 'npm';
+        if ($this->isYarn()) {
+            return 'yarn';
+        }
+
+        return $this->isPnpm() ? 'pnpm' : 'npm';
     }
 
     /**
@@ -331,14 +370,13 @@ final class PackageManager
      */
     public function isExecutable(ProcessExecutor $executor, ?string $cwd): bool
     {
-        $isYarn = $this->isYarn();
-        if (!$isYarn && !$this->isNpm()) {
+        if (!$this->isYarn() && !$this->isPnpm() && !$this->isNpm()) {
             return false;
         }
 
         $tested = self::test($executor, $cwd);
 
-        return in_array($isYarn ? self::YARN : self::NPM, $tested, true);
+        return in_array($this->name(), $tested, true);
     }
 
     /**
