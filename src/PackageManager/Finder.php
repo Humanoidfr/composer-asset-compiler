@@ -100,6 +100,9 @@ class Finder
 
         $manager = null;
         switch (true) {
+            case file_exists("{$path}/pnpm-lock.yaml"):
+                $manager = PackageManager::fromDefault(PackageManager::PNPM);
+                break;
             case file_exists("{$path}/package-lock.json"):
             case file_exists("{$path}/npm-shrinkwrap.json"):
                 $manager = PackageManager::fromDefault(PackageManager::NPM);
