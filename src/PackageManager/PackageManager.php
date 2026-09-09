@@ -20,6 +20,7 @@ final class PackageManager
     public const YARN = 'yarn';
     public const NPM = 'npm';
     public const PNPM = 'pnpm';
+    public const BUN = 'bun';
 
     private const DEPENDENCIES = 'dependencies';
     private const DEPS_INSTALL = 'install';
@@ -56,6 +57,15 @@ final class PackageManager
             self::SCRIPT => 'pnpm run %s',
             self::DISCOVER => 'pnpm --version',
             self::CLEAN_CACHE => 'pnpm store prune',
+        ],
+        self::BUN => [
+            self::DEPENDENCIES => [
+                self::DEPS_INSTALL => 'bun install --frozen-lockfile',
+                self::DEPS_UPDATE => 'bun update',
+            ],
+            self::SCRIPT => 'bun run %s',
+            self::DISCOVER => 'bun --version',
+            self::CLEAN_CACHE => 'bun pm cache rm',
         ],
     ];
 
@@ -177,10 +187,10 @@ final class PackageManager
 
         $manager = $config[self::MANAGER] ?? null;
         $name = is_string($manager) ? strtolower(trim($manager)) : null;
-        in_array($name, [self::YARN, self::NPM, self::PNPM], true) or $name = null;
+        in_array($name, [self::YARN, self::NPM, self::PNPM, self::BUN], true) or $name = null;
         $this->name = $name;
 
-        if (!$this->isYarn() && !$this->isPnpm() && !$this->isNpm()) {
+        if (!$this->isYarn() && !$this->isPnpm() && !$this->isNpm() && !$this->isBun()) {
             $this->reset();
 
             return;
@@ -252,6 +262,28 @@ final class PackageManager
     /**
      * @return bool
      */
+    public function isBun(): bool
+    {
+        if (!$this->isValid()) {
+            return false;
+        }
+
+        if ($this->name) {
+            return $this->name === self::BUN;
+        }
+
+        if ($this->script && stripos($this->script, 'bun') !== false) {
+            $this->name = self::BUN;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @return bool
+     */
     public function isYarn(): bool
     {
         if (!$this->isValid()) {
@@ -284,7 +316,11 @@ final class PackageManager
             return 'yarn';
         }
 
-        return $this->isPnpm() ? 'pnpm' : 'npm';
+        if ($this->isPnpm()) {
+            return 'pnpm';
+        }
+
+        return $this->isBun() ? 'bun' : 'npm';
     }
 
     /**
@@ -370,7 +406,7 @@ final class PackageManager
      */
     public function isExecutable(ProcessExecutor $executor, ?string $cwd): bool
     {
-        if (!$this->isYarn() && !$this->isPnpm() && !$this->isNpm()) {
+        if (!$this->isYarn() && !$this->isPnpm() && !$this->isNpm() && !$this->isBun()) {
             return false;
         }
 
