@@ -110,6 +110,10 @@ class Finder
             case file_exists("{$path}/yarn.lock"):
                 $manager = PackageManager::fromDefault(PackageManager::YARN);
                 break;
+            case file_exists("{$path}/bun.lock"):
+            case file_exists("{$path}/bun.lockb"):
+                $manager = PackageManager::fromDefault(PackageManager::BUN);
+                break;
         }
 
         if ($manager && $this->checkIsValid($manager, $name, $path, false, true)) {
