@@ -1,3 +1,9 @@
+> [!WARNING]
+> **Ce dépôt a été migré sur GitLab le 06/10/2026 et n'est plus maintenu ici.**
+>
+> - Nouveau dépôt : https://gitlab.humanoid.fr/humanoid/composer-asset-compiler
+> - Le fork est désormais publié sous le nom `humanoid/composer-assets-compiler` (il remplace `inpsyde/composer-assets-compiler`), servi par satis (`packages.humanoid.fr`) à partir de la version 3.1.2.
+
 # Composer Asset Compiler
 
 [![PHP Static Analysis](https://github.com/inpsyde/composer-asset-compiler/actions/workflows/php-static-analysis.yml/badge.svg)](https://github.com/inpsyde/composer-asset-compiler/actions/workflows/php-static-analysis.yml)
@@ -85,4 +91,3 @@ The example above is the simplest use case, but the plugin has many possible con
 ## Copyright and License
 
 Good news, this library is free for everyone! Since it's released under the MIT License you can use it free of charge on your personal or commercial website.
-
